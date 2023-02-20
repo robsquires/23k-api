@@ -34,17 +34,6 @@ export function API({ stack }: StackContext) {
         bucketName: "23k-data",
       },
     },
-    notifications: {
-      stravaEvents: {
-        function: "packages/functions/src/strava.eventListener",
-        events: ["object_created"],
-        filters: [
-          {
-            prefix: "events/new",
-          },
-        ],
-      },
-    },
   });
 
   queue.attachPermissions(["s3"]);
