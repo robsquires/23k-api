@@ -3,7 +3,10 @@ import * as strava from "@23k-api/core/strava";
 import { oAuth, stravaToken, s3, sqs } from "@23k-api/core/services";
 import { config } from "@23k-api/core/config";
 import { Queue } from "sst/node/queue";
-import { StravaWebhookEvent, StravaWebhookEventSchema } from "@23k-api/core/models"
+import {
+  StravaWebhookEvent,
+  StravaWebhookEventSchema,
+} from "@23k-api/core/models";
 
 const { scope, redirect_uri } = config.oauth;
 
@@ -51,7 +54,7 @@ export const webHook = ApiHandler(async (_evt) => {
 
   // this is strava checking the webhook is hooked up
   if (method === "GET") {
-    console.log('GET /webhook',  _evt.queryStringParameters)
+    console.log("GET /webhook", _evt.queryStringParameters);
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -65,8 +68,7 @@ export const webHook = ApiHandler(async (_evt) => {
   console.debug("Received event:", data);
 
   const users = await s3.users.read("users.json");
-  const user =
-    users.find(({ athleteId }) => athleteId === data?.owner_id);
+  const user = users.find(({ athleteId }) => athleteId === data?.owner_id);
 
   if (!user) {
     console.log(`Could not lookup userId for athlete ${data?.owner_id}`);
@@ -86,19 +88,20 @@ export const webHook = ApiHandler(async (_evt) => {
   return { statusCode: 200, body: "ok" };
 });
 
-type Record = { body:string }
+type Record = { body: string };
 export const eventListener = async (_evt: { Records: Record[] }) => {
-  const failedEvents: { event: StravaWebhookEvent, error: any }[] = [];
+  const failedEvents: { event: StravaWebhookEvent; error: any }[] = [];
   await Promise.all(
-    _evt.Records
-      .map((record) => StravaWebhookEventSchema.parse(JSON.parse(record.body)))
-      .filter(({data}) => data.aspect_type === 'create')
+    _evt.Records.map((record) =>
+      StravaWebhookEventSchema.parse(JSON.parse(record.body))
+    )
+      .filter(({ data }) => data.aspect_type === "create")
       .map(async (event) => {
         const token = await stravaToken.getToken(event.userId);
-        const activity = await strava.getActivity(token, event.data.object_id)
+        const activity = await strava.getActivity(token, event.data.object_id);
         console.log(activity);
         // save to GQL
       })
-    );
-    console.log(failedEvents)
+  );
+  console.log(failedEvents);
 };

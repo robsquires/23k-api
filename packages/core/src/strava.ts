@@ -7,12 +7,12 @@ export async function getAthlete(token: StravaAccessToken) {
 }
 
 type Activity = {
-  type: string
-  distance: number,
-  start_date: number,
-  calories: number,
-  max_watts: number
-}
+  type: string;
+  distance: number;
+  start_date: number;
+  calories: number;
+  max_watts: number;
+};
 
 export async function getActivity(
   token: StravaAccessToken,
