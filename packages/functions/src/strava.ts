@@ -88,20 +88,30 @@ export const webHook = ApiHandler(async (_evt) => {
   return { statusCode: 200, body: "ok" };
 });
 
-type Record = { body: string };
+type Record = { body: string; messageId: string };
 export const eventListener = async (_evt: { Records: Record[] }) => {
-  const failedEvents: { event: StravaWebhookEvent; error: any }[] = [];
+  const failedRecords: {
+    record: Record;
+    error: any;
+  }[] = [];
+
   await Promise.all(
-    _evt.Records.map((record) =>
-      StravaWebhookEventSchema.parse(JSON.parse(record.body))
-    )
-      .filter(({ data }) => data.aspect_type === "create")
-      .map(async (event) => {
+    _evt.Records.map(async (record) => {
+      try {
+        const event = StravaWebhookEventSchema.parse(JSON.parse(record.body));
         const token = await stravaToken.getToken(event.userId);
         const activity = await strava.getActivity(token, event.data.object_id);
         console.log(activity);
-        // save to GQL
-      })
+      } catch (error) {
+        console.error("Failed to process record", record, error);
+        failedRecords.push({ error, record });
+      }
+      // save to GQL
+    })
   );
-  console.log(failedEvents);
+  return {
+    batchItemFailures: failedRecords.map(({ record }) => ({
+      itemIdentifier: record.messageId,
+    })),
+  };
 };

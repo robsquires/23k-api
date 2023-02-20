@@ -2,7 +2,14 @@ import { StackContext, Api, Bucket, Queue } from "sst/constructs";
 
 export function API({ stack }: StackContext) {
   const queue = new Queue(stack, "Queue", {
-    consumer: "packages/functions/src/strava.eventListener",
+    consumer: {
+      function: "packages/functions/src/strava.eventListener",
+      cdk: {
+        eventSource: {
+          reportBatchItemFailures: true,
+        },
+      },
+    },
   });
 
   const api = new Api(stack, "api", {

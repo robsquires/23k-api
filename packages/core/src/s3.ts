@@ -22,8 +22,11 @@ export class S3Json<T> {
     try {
       result = await s3.getObject({ Bucket: this.Bucket, Key }).promise();
     } catch (err: any) {
-      if (err.code === "NoSuchKey" && defaultValue) {
-        return defaultValue;
+      if (err.code === "NoSuchKey") {
+        if (defaultValue) {
+          return defaultValue;
+        }
+        console.log(`Could not find file at ${Key}`);
       }
       throw err;
     }
@@ -32,6 +35,6 @@ export class S3Json<T> {
       return JSON.parse(result.Body.toString());
     }
 
-    throw new Error(`Could not find file at ${Key}`);
+    throw new Error(`Error processing file at ${Key}`);
   }
 }
