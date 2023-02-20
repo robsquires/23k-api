@@ -24,6 +24,7 @@
   ],
   "dependencies": {
     "simple-oauth2": "^5.0.0",
-    "strava-v3": "^2.1.0"
+    "strava-v3": "^2.1.0",
+    "zod": "^3.20.6"
   }
 }

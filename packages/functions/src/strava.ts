@@ -3,6 +3,7 @@ import * as strava from "@23k-api/core/strava";
 import { oAuth, stravaToken, s3, sqs } from "@23k-api/core/services";
 import { config } from "@23k-api/core/config";
 import { Queue } from "sst/node/queue";
+import { StravaWebhookEvent, StravaWebhookEventSchema } from "@23k-api/core/models"
 
 const { scope, redirect_uri } = config.oauth;
 
@@ -64,10 +65,10 @@ export const webHook = ApiHandler(async (_evt) => {
   console.debug("Received event:", data);
 
   const users = await s3.users.read("users.json");
-  const { userId } =
-    users.find(({ athleteId }) => athleteId === data?.owner_id) || {};
+  const user =
+    users.find(({ athleteId }) => athleteId === data?.owner_id);
 
-  if (!userId) {
+  if (!user) {
     console.log(`Could not lookup userId for athlete ${data?.owner_id}`);
     return { statusCode: 200, body: "skipped" };
   }
@@ -77,7 +78,7 @@ export const webHook = ApiHandler(async (_evt) => {
       // Get the queue url from the environment variable
       QueueUrl: Queue.Queue.queueUrl,
       MessageBody: JSON.stringify({
-        userId,
+        userId: user.userId,
         data,
       }),
     })
@@ -86,19 +87,18 @@ export const webHook = ApiHandler(async (_evt) => {
 });
 
 type Record = { body:string }
-type Event = { userId:string, data: any }
 export const eventListener = async (_evt: { Records: Record[] }) => {
+  const failedEvents: { event: StravaWebhookEvent, error: any }[] = [];
   await Promise.all(
     _evt.Records
-      .map((record) : Event => JSON.parse(record.body))
+      .map((record) => StravaWebhookEventSchema.parse(JSON.parse(record.body)))
       .filter(({data}) => data.aspect_type === 'create')
-      .map(async ({ userId, data }) => {
-        const token = await stravaToken.getToken(userId);
-        // @todo get typing working on data
-        const activity = await strava.getActivity(token, data.object_id);
-
+      .map(async (event) => {
+        const token = await stravaToken.getToken(event.userId);
+        const activity = await strava.getActivity(token, event.data.object_id)
         console.log(activity);
         // save to GQL
       })
     );
+    console.log(failedEvents)
 };

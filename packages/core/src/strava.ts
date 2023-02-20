@@ -6,13 +6,21 @@ export async function getAthlete(token: StravaAccessToken) {
   return await strava.athlete.get({});
 }
 
+type Activity = {
+  type: string
+  distance: number,
+  start_date: number,
+  calories: number,
+  max_watts: number
+}
+
 export async function getActivity(
   token: StravaAccessToken,
-  activityId: string
+  activityId: number
 ) {
   strava.client(token.access_token);
 
-  const activity = await strava.activities.get({
+  const activity: Activity = await strava.activities.get({
     id: activityId,
     include_all_efforts: false,
   });
@@ -23,7 +31,6 @@ export async function getActivity(
   // });
 
   return {
-    activityId,
     type: activity.type,
     distance: activity.distance,
     start_date: activity.start_date,

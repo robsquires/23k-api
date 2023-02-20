@@ -1,8 +1,9 @@
 import { AuthorizationCode } from "simple-oauth2";
 import { config } from "./config";
-import { StravaAccessToken, StravaToken } from "@23k-api/core/src/strava-token";
-import { S3Json } from "@23k-api/core/src/s3";
+import { StravaAccessToken, StravaToken } from "./strava-token";
+import { S3Json } from "./s3";
 import AWS from "aws-sdk";
+import { User } from "./models";
 
 enum AuthorizationMethod {
   HEADER = "header",
@@ -21,23 +22,11 @@ const oauthConfig = {
     authorizationMethod: AuthorizationMethod.BODY,
   },
 };
-
 const oAuth = new AuthorizationCode(oauthConfig);
-
-export type User = {
-  userId: string;
-  athleteId: string;
-};
-
-export type StravaWebhookEvent = {
-  userId: string;
-  data: any;
-};
 
 const s3 = {
   tokens: new S3Json<StravaAccessToken>("23k-data"),
   users: new S3Json<User[]>("23k-data"),
-  events: new S3Json<StravaWebhookEvent>("23k-data"),
 };
 const stravaToken = new StravaToken(s3.tokens, oAuth);
 
