@@ -1,12 +1,21 @@
 import { StackContext, Api, Bucket, Queue } from "sst/constructs";
 
 export function API({ stack }: StackContext) {
+  const deadLetterQueue = new Queue(stack, "dlq", {});
   const queue = new Queue(stack, "Queue", {
     consumer: {
       function: "packages/functions/src/strava.eventListener",
       cdk: {
         eventSource: {
           reportBatchItemFailures: true,
+        },
+      },
+    },
+    cdk: {
+      queue: {
+        deadLetterQueue: {
+          maxReceiveCount: 2,
+          queue: deadLetterQueue.cdk.queue,
         },
       },
     },

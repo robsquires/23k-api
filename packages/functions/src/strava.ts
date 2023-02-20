@@ -89,11 +89,9 @@ export const webHook = ApiHandler(async (_evt) => {
 });
 
 type Record = { body: string; messageId: string };
+
 export const eventListener = async (_evt: { Records: Record[] }) => {
-  const failedRecords: {
-    record: Record;
-    error: any;
-  }[] = [];
+  const failedRecords: string[] = [];
 
   await Promise.all(
     _evt.Records.map(async (record) => {
@@ -104,14 +102,14 @@ export const eventListener = async (_evt: { Records: Record[] }) => {
         console.log(activity);
       } catch (error) {
         console.error("Failed to process record", record, error);
-        failedRecords.push({ error, record });
+        failedRecords.push(record.messageId);
       }
       // save to GQL
     })
   );
   return {
-    batchItemFailures: failedRecords.map(({ record }) => ({
-      itemIdentifier: record.messageId,
+    batchItemFailures: failedRecords.map((messageId) => ({
+      itemIdentifier: messageId,
     })),
   };
 };
