@@ -20,13 +20,19 @@ export function API({ stack }: StackContext) {
       },
     },
   });
-
   const api = new Api(stack, "api", {
     defaults: {
       function: {
         bind: [queue],
+        environment: {
+          STRAVA_CLIENT_ID: process.env.STRAVA_CLIENT_ID || "",
+          STRAVA_CLIENT_SECRET: process.env.STRAVA_CLIENT_SECRET || "",
+          STRAVA_CLIENT_REDIRECT_URI:
+            process.env.STRAVA_CLIENT_REDIRECT_URI || "",
+        },
       },
     },
+
     routes: {
       "GET /": "packages/functions/src/lambda.handler",
       "GET /data": "packages/functions/src/data.handler",
