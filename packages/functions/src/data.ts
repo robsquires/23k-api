@@ -35,7 +35,7 @@ export const handler = ApiHandler(async (_evt) => {
       });
 
       const detailedActivities = await Promise.all(
-        activities.map(async ({ id }: any) => {
+        activities.map(async ({ id }: { id: string }) => {
           return {
             activity: await strava.activities.get({
               id,

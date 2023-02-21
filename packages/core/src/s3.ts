@@ -1,28 +1,35 @@
-import { S3 } from "aws-sdk";
-const s3 = new S3();
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  NotFound,
+} from "@aws-sdk/client-s3";
+const s3 = new S3Client({});
 
 export class S3Json<T> {
   Bucket: string;
   constructor(Bucket: string) {
     this.Bucket = Bucket;
   }
-  write(Key: string, data: T) {
-    return s3
-      .putObject({
+  async write(Key: string, data: T) {
+    await s3.send(
+      new PutObjectCommand({
         Bucket: this.Bucket,
         Key,
         Body: Buffer.from(JSON.stringify(data), "utf8"),
         ContentType: "application/json",
       })
-      .promise();
+    );
   }
 
-  async read(Key: string, defaultValue?: any): Promise<T> {
-    let result;
+  async read(Key: string, defaultValue?: T): Promise<T> {
+    let response;
     try {
-      result = await s3.getObject({ Bucket: this.Bucket, Key }).promise();
-    } catch (err: any) {
-      if (err.code === "NoSuchKey") {
+      response = await s3.send(
+        new GetObjectCommand({ Bucket: this.Bucket, Key })
+      );
+    } catch (err) {
+      if (err instanceof NotFound) {
         if (defaultValue) {
           return defaultValue;
         }
@@ -31,10 +38,10 @@ export class S3Json<T> {
       throw err;
     }
 
-    if (result && result.Body) {
-      return JSON.parse(result.Body.toString());
+    if (response && response.Body) {
+      return JSON.parse(await response.Body.transformToString());
     }
 
-    throw new Error(`Error processing file at ${Key}`);
+    throw new Error(`Error reading file at ${Key}`);
   }
 }

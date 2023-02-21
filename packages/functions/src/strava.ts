@@ -1,12 +1,13 @@
 import { ApiHandler } from "sst/node/api";
 import * as strava from "@23k-api/core/strava";
-import { oAuth, stravaToken, s3, sqs } from "@23k-api/core/services";
+import { oAuth, stravaToken, s3 } from "@23k-api/core/services";
 import { config } from "@23k-api/core/config";
 import { Queue } from "sst/node/queue";
-import {
-  StravaWebhookEvent,
-  StravaWebhookEventSchema,
-} from "@23k-api/core/models";
+import { StravaWebhookEventSchema } from "@23k-api/core/models";
+
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+
+const sqs = new SQSClient({});
 
 const { scope, redirect_uri } = config.oauth;
 
@@ -75,8 +76,8 @@ export const webHook = ApiHandler(async (_evt) => {
     return { statusCode: 200, body: "skipped" };
   }
 
-  await sqs
-    .sendMessage({
+  await sqs.send(
+    new SendMessageCommand({
       // Get the queue url from the environment variable
       QueueUrl: Queue.Queue.queueUrl,
       MessageBody: JSON.stringify({
@@ -84,7 +85,7 @@ export const webHook = ApiHandler(async (_evt) => {
         data,
       }),
     })
-    .promise();
+  );
   return { statusCode: 200, body: "ok" };
 });
 
