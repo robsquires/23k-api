@@ -4,7 +4,7 @@ export function API({ stack }: StackContext) {
   const deadLetterQueue = new Queue(stack, "dlq", {});
   const queue = new Queue(stack, "Queue", {
     consumer: {
-      function: "packages/functions/src/strava.eventListener",
+      function: "packages/functions/src/event-listener.handler",
       cdk: {
         eventSource: {
           reportBatchItemFailures: true,
@@ -34,12 +34,14 @@ export function API({ stack }: StackContext) {
     },
 
     routes: {
-      "GET /": "packages/functions/src/lambda.handler",
       "GET /data": "packages/functions/src/data.handler",
-      "GET /strava/init": "packages/functions/src/strava.authUri",
-      "GET /strava/callback": "packages/functions/src/strava.authCallback",
-      "POST /strava/webhook": "packages/functions/src/strava.webHook",
-      "GET /strava/webhook": "packages/functions/src/strava.webHook",
+      "GET /strava/oauth/authorize":
+        "packages/functions/src/strava/oauth.authorizeHandler",
+      "GET /strava/oauth/callback":
+        "packages/functions/src/strava/oauth.callbackHandler",
+      "POST /strava/webhook":
+        "packages/functions/src/strava/webhook.postHandler",
+      "GET /strava/webhook": "packages/functions/src/strava/webhook.getHandler",
     },
   });
 
